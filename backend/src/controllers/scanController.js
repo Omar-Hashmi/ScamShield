@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const crypto = require('crypto');
 const Scan = require('../models/Scan');
 const cfg = require('../config/scanConfig');
 const { buildSubmission } = require('../validators/scanValidators');
@@ -12,8 +13,8 @@ exports.createScan = async (req, res, next) => {
   const file = req.file; // present only for screenshot uploads (multipart)
   try {
     const submission = await buildSubmission(req.body, file);
-
-    const scan = await Scan.create({
+    // Anonymous scans are analyzed in memory and never written to the history collection.
+    const scan = req.user ? await Scan.create({
       user: req.user.id,
       inputType: submission.inputType,
       status: 'processing',
@@ -24,31 +25,51 @@ exports.createScan = async (req, res, next) => {
         meta: submission.meta,
         ...(cfg.retainContent && submission.content ? { content: submission.content } : {}),
       },
-    });
+    }) : null;
+    const scanId = scan ? scan.id : crypto.randomUUID();
 
     const started = Date.now();
+    let result;
     try {
-      const raw = await analyze(submission, { scanId: String(scan._id), filePath: file?.path });
-      scan.result = normalizeResult(raw);
-      scan.status = 'completed';
+      const raw = await analyze(submission, { scanId, filePath: file?.path });
+      result = normalizeResult(raw);
+      // Product rule: only message text is classified; all other input types are safe.
+      if (submission.inputType !== 'text') {
+        result = {
+          verdict: 'safe',
+          riskScore: 0,
+          confidence: 1,
+          language: null,
+          reasons: ['Only message text is analyzed for scams. This input type is currently marked safe.'],
+          signals: { inputType: submission.inputType, messageOnlyAnalysis: true },
+        };
+      }
+      if (scan) {
+        scan.result = result;
+        scan.status = 'completed';
+      }
     } catch (err) {
       if (!(err instanceof AnalysisError)) throw err;
-      console.error(`Scan ${scan.id} analysis failed: ${err.message}`);
-      scan.status = 'failed';
-      scan.error = { code: err.code, message: err.publicMessage };
+      if (scan) {
+        console.error(`Scan ${scan.id} analysis failed: ${err.message}`);
+        scan.status = 'failed';
+        scan.error = { code: err.code, message: err.publicMessage };
+        scan.analysisMs = Date.now() - started;
+        await scan.save();
+      }
+      return res.status(err.httpStatus).json({ message: err.publicMessage, scanId, status: 'failed' });
+    }
+    if (scan) {
       scan.analysisMs = Date.now() - started;
       await scan.save();
-      return res.status(err.httpStatus).json({ message: err.publicMessage, scanId: scan.id, status: 'failed' });
     }
-    scan.analysisMs = Date.now() - started;
-    await scan.save();
 
     res.status(201).json({
-      scanId: scan.id,
-      inputType: scan.inputType,
-      status: scan.status,
-      result: scan.result,
-      createdAt: scan.createdAt,
+      scanId,
+      inputType: submission.inputType,
+      status: 'completed',
+      result: scan ? scan.result : result,
+      ...(scan ? { createdAt: scan.createdAt, saved: true } : { saved: false }),
     });
   } catch (err) {
     if (err instanceof ValidationError) {

@@ -20,17 +20,19 @@ export default function Dashboard() {
         <div className="dashboard-welcome">
           <div>
             <p className="dashboard-eyebrow">YOUR SCAMSHIELD DASHBOARD</p>
-            <h1>Good to see you, {firstName}</h1>
-            <p className="dashboard-subtitle">Check something that doesn’t feel right. We’ll help you spot the warning signs.</p>
+            <h1>{user ? `Good to see you, ${firstName}` : 'Check before you click'}</h1>
+            <p className="dashboard-subtitle">Check something that doesn’t feel right. We’ll help you spot the warning signs. No account is needed to scan.</p>
           </div>
-          <div className="dashboard-protected"><ShieldCheckIcon size={18} /> Your account is protected</div>
+          {user
+            ? <Link className="dashboard-protected" to="/history"><ShieldCheckIcon size={18} /> Your scan history is being saved</Link>
+            : <Link className="dashboard-protected" to="/login"><ShieldCheckIcon size={18} /> Sign in to save your history</Link>}
         </div>
 
         <section className="dashboard-hero" aria-labelledby="dashboard-action-title">
           <div className="dashboard-hero-copy">
             <span className="dashboard-hero-kicker">PAUSE. CHECK. STAY SAFE.</span>
             <h2 id="dashboard-action-title">Not sure if it’s a scam?</h2>
-            <p>Share a message, link, phone number or screenshot for a quick risk check.</p>
+            <p>Share a message, link, phone number or screenshot for a quick risk check. Scans are saved to your history when you’re signed in.</p>
             <Link className="dashboard-cta" to="/scan">Check suspicious content <span aria-hidden="true">→</span></Link>
           </div>
           <div className="dashboard-shield-art" aria-hidden="true"><ShieldCheckIcon size={74} /></div>
@@ -54,7 +56,7 @@ export default function Dashboard() {
             ))}
           </div>
         </section>
-        <p className="dashboard-footnote"><ShieldCheckIcon size={16} /> Your checks are private. Only submit content you choose to share.</p>
+        <p className="dashboard-footnote"><ShieldCheckIcon size={16} /> Guest scans are analyzed without saving them to an account.</p>
       </main>
     </div>
   );

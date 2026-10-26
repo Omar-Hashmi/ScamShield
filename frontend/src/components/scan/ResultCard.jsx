@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { CheckIcon, CopyIcon } from '../Icons.jsx';
 
 const VERDICTS = {
@@ -11,7 +12,7 @@ const VERDICTS = {
 const TYPE_LABEL = { text: 'Message', url: 'Link', image: 'Screenshot', phone: 'Phone number' };
 
 // Compact summary shown straight after submission. The full explainability view is a later module.
-export default function ResultCard({ scan, onReset }) {
+export default function ResultCard({ scan, onReset, isAuthenticated }) {
   const [copied, setCopied] = useState(false);
   const { result } = scan;
   const v = VERDICTS[result.verdict] || VERDICTS.unknown;
@@ -55,7 +56,7 @@ export default function ResultCard({ scan, onReset }) {
           {result.signals.dataset_applicable
             ? 'Compared with English SMS examples. No dataset match cannot guarantee a message is safe.'
             : 'The English SMS dataset was not applicable to this message, so it did not affect the result.'}{' '}
-          Source: <a href="https://doi.org/10.24432/C5CC84" target="_blank" rel="noreferrer">UCI SMS Spam Collection</a> (CC BY 4.0).
+          The classifier was trained on labeled English SMS examples. Source: <a href="https://www.kaggle.com/datasets/uciml/sms-spam-collection-dataset" target="_blank" rel="noreferrer">SMS Spam Collection on Kaggle</a>; original dataset: <a href="https://doi.org/10.24432/C5CC84" target="_blank" rel="noreferrer">UCI</a> (CC BY 4.0).
         </p>
       )}
 
@@ -67,6 +68,10 @@ export default function ResultCard({ scan, onReset }) {
         </button>
       </div>
 
+      {!isAuthenticated && (
+        <p className="save-history-prompt">Want to keep future results? <Link to="/login">Sign in to save your scan history</Link>.</p>
+      )}
+      {isAuthenticated && <Link className="save-history-prompt" to="/history">View saved scan history</Link>}
       <button type="button" className="btn-outline result-reset" onClick={onReset}>Scan something else</button>
     </div>
   );

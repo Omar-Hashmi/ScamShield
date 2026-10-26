@@ -47,4 +47,5 @@ export const api = {
   register: (payload) => request('/auth/register', { method: 'POST', body: payload }),
   me: () => request('/auth/me'),
   createScan: (payload) => request('/scans', { method: 'POST', body: payload }),
+  listScans: () => request('/scans'),
 };

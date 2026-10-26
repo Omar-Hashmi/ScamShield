@@ -64,7 +64,7 @@ export default function Signup() {
   };
 
   return (
-    <AuthLayout topText="Already have an account?" topLinkText="Log In" topLinkTo="/login">
+    <AuthLayout>
       <div className="reveal" style={{ '--i': 1 }}>
         <h1>Create Account</h1>
         <p className="subtitle">Join ScamShield AI and stay protected</p>
@@ -103,11 +103,10 @@ export default function Signup() {
         </div>
       </form>
 
-      <div className="reveal" style={{ '--i': 7 }}><SocialButtons /></div>
-
-      <p className="switch mobile-only">
+      <p className="switch">
         Already have an account? <Link to="/login" className="link">Log in</Link>
       </p>
+      <div className="reveal" style={{ '--i': 7 }}><SocialButtons /></div>
     </AuthLayout>
   );
 }

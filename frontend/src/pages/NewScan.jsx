@@ -8,6 +8,7 @@ import TextField from '../components/TextField.jsx';
 import Button from '../components/Button.jsx';
 import { AlertIcon, ImageIcon, LinkIcon, LockOutlineIcon, MessageIcon, PhoneIcon, ShieldCheckIcon } from '../components/Icons.jsx';
 import { api } from '../api/client.js';
+import { useAuth } from '../context/AuthContext.jsx';
 import { LIMITS, validateImage, validatePhone, validateText, validateUrl } from '../utils/scanRules.js';
 
 const MODES = [
@@ -27,6 +28,7 @@ const COPY = {
 const VALIDATORS = { text: validateText, url: validateUrl, phone: validatePhone };
 
 export default function NewScan() {
+  const { user } = useAuth();
   const [mode, setMode] = useState('text');
   const [values, setValues] = useState({ text: '', url: '', phone: '' });
   const [file, setFile] = useState(null);
@@ -99,7 +101,7 @@ export default function NewScan() {
       <main className="scan-main">
         <section className="scan-card reveal" style={{ '--i': 0 }} aria-labelledby="scan-heading">
           {scan ? (
-            <ResultCard scan={scan} onReset={reset} />
+            <ResultCard scan={scan} onReset={reset} isAuthenticated={Boolean(user)} />
           ) : (
             <>
               <h1 id="scan-heading">Check something suspicious</h1>

@@ -50,7 +50,7 @@ export default function Login() {
   };
 
   return (
-    <AuthLayout topText="Don't have an account?" topLinkText="Sign Up" topLinkTo="/signup">
+    <AuthLayout>
       <div className="reveal" style={{ '--i': 1 }}>
         <h1>Welcome Back</h1>
         <p className="subtitle">Login to your ScamShield AI account</p>
@@ -83,11 +83,10 @@ export default function Login() {
         </div>
       </form>
 
-      <div className="reveal" style={{ '--i': 6 }}><SocialButtons /></div>
-
-      <p className="switch mobile-only">
+      <p className="switch">
         New to ScamShield? <Link to="/signup" className="link">Create an account</Link>
       </p>
+      <div className="reveal" style={{ '--i': 6 }}><SocialButtons /></div>
     </AuthLayout>
   );
 }

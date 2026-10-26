@@ -5,6 +5,7 @@ import Signup from './pages/Signup.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import NewScan from './pages/NewScan.jsx';
 import OAuthCallback from './pages/OAuthCallback.jsx';
+import History from './pages/History.jsx';
 
 function Protected({ children }) {
   const { user, loading } = useAuth();
@@ -21,12 +22,14 @@ function GuestOnly({ children }) {
 export default function App() {
   return (
     <Routes>
+      <Route path="/" element={<Dashboard />} />
       <Route path="/login" element={<GuestOnly><Login /></GuestOnly>} />
       <Route path="/signup" element={<GuestOnly><Signup /></GuestOnly>} />
       <Route path="/oauth/callback" element={<OAuthCallback />} />
-      <Route path="/dashboard" element={<Protected><Dashboard /></Protected>} />
-      <Route path="/scan" element={<Protected><NewScan /></Protected>} />
-      <Route path="*" element={<Navigate to="/login" replace />} />
+      <Route path="/dashboard" element={<Dashboard />} />
+      <Route path="/scan" element={<NewScan />} />
+      <Route path="/history" element={<Protected><History /></Protected>} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }

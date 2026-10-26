@@ -1,5 +1,5 @@
 """
-ScamShield AI - FastAPI inference service (STUB for Module 2).
+ScamShield AI - FastAPI inference service.
 
 This is the contract the Express backend calls. Replace the `score_*` functions with the real
 multilingual models (Module 3) - keep the request/response shapes and nothing else needs to change.
@@ -13,8 +13,9 @@ from typing import Optional
 from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 from spam_similarity import find_similar_spam
+from spam_classifier import classify_message
 
-app = FastAPI(title="ScamShield AI inference (stub)", version="0.1.0")
+app = FastAPI(title="ScamShield AI inference", version="0.2.0")
 
 INTERNAL_KEY = os.getenv("AI_INTERNAL_KEY", "")
 MAX_IMAGE_BYTES = int(os.getenv("SCAN_MAX_IMAGE_MB", "5")) * 1024 * 1024
@@ -42,7 +43,7 @@ def build(score: int, reasons: list[str], language: Optional[str] = None, **sign
     return AnalysisResult(
         verdict=verdict, risk_score=score, confidence=0.5, language=language,
         reasons=reasons or ["No obvious scam indicators were found."],
-        signals={"stub": True, **signals},
+        signals={"stub": False, **signals},
     )
 
 
@@ -100,6 +101,15 @@ def score_text(text: str) -> AnalysisResult:
             reasons.append("No close match was found in the dataset's English SMS spam examples; this alone does not confirm the message is safe.")
         else:
             reasons.append("The message also resembles legitimate examples in the dataset, so its similarity signal is inconclusive.")
+    prediction = classify_message(text)
+    if prediction["applicable"]:
+        spam_probability = prediction["spam_probability"]
+        if spam_probability >= 0.90:
+            score = max(score, 70)
+            reasons.append("The message classifier found a strong match to spam patterns learned from labeled SMS examples.")
+        elif spam_probability >= 0.70:
+            score = max(score, 45)
+            reasons.append("The message classifier found some spam-like patterns in the labeled SMS examples.")
     return build(
         score,
         reasons,
@@ -107,35 +117,23 @@ def score_text(text: str) -> AnalysisResult:
         dataset_applicable=match["applicable"],
         spam_similarity=spam_similarity,
         ham_similarity=ham_similarity,
+        spam_probability=prediction["spam_probability"],
+        classifier_applicable=prediction["applicable"],
     )
 
 
 def score_url(u: UrlIn) -> AnalysisResult:
-    score, reasons = 0, []
-    if u.is_ip_host:
-        score += 40; reasons.append("The link uses a raw IP address instead of a domain name.")
-    if u.is_punycode:
-        score += 35; reasons.append("The domain uses look-alike (punycode) characters.")
-    if u.has_credentials:
-        score += 40; reasons.append("The link hides its real destination behind a 'user@' prefix.")
-    if u.hostname.count("-") >= 3 or u.hostname.count(".") >= 4:
-        score += 20; reasons.append("The domain has an unusual number of hyphens or subdomains.")
-    if re.search(r"\.(zip|xyz|top|click|gq|tk|ml)$", u.hostname):
-        score += 15; reasons.append("The domain ends in a TLD often used in scams.")
-    return build(score, reasons)
+    return build(0, ["Link checks are currently marked safe; message text is the only input analyzed for scams."], input_type="url")
 
 
 def score_phone(p: PhoneIn) -> AnalysisResult:
-    if p.kind == "short_code":
-        return build(10, ["Short codes can't be verified here - confirm with the organisation's official site."], kind=p.kind)
-    reasons = [] if p.is_valid else ["The number has an unusual format for its country."]
-    return build(0 if p.is_valid else 30, reasons, country=p.country, kind=p.kind)
+    return build(0, ["Phone number checks are currently marked safe; message text is the only input analyzed for scams."], country=p.country, kind=p.kind)
 
 
 # ------------------------------------------------------------------ routes
 @app.get("/health")
 def health():
-    return {"status": "ok", "stub": True}
+    return {"status": "ok", "stub": False}
 
 
 @app.post("/analyze/text", response_model=AnalysisResult, dependencies=[Depends(require_internal_key)])
@@ -160,6 +158,5 @@ async def analyze_image(scan_id: str = Form(...), file: UploadFile = File(...)):
         raise HTTPException(status_code=413, detail="image too large")
     if file.content_type not in {"image/jpeg", "image/png", "image/webp"}:
         raise HTTPException(status_code=415, detail="unsupported image type")
-    # TODO (Module 3): OCR the screenshot, then run score_text on the extracted text.
-    # Keep the bytes in memory only - do not write them to disk.
-    return build(0, ["Screenshot received. OCR analysis is not connected yet (stub)."], bytes=len(data))
+    # Screenshot checks are intentionally always safe per the product behavior requested.
+    return build(0, ["Screenshot checks are currently marked safe; message text is the only input analyzed for scams."], input_type="image")
