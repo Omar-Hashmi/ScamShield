@@ -23,15 +23,16 @@ export class ApiError extends Error {
 
 async function request(path, { method = 'GET', body } = {}) {
   const token = tokenStore.get();
+  const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
   let res;
   try {
     res = await fetch(`/api${path}`, {
       method,
       headers: {
-        'Content-Type': 'application/json',
+        ...(!isFormData ? { 'Content-Type': 'application/json' } : {}),
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
-      body: body ? JSON.stringify(body) : undefined,
+      body: body ? (isFormData ? body : JSON.stringify(body)) : undefined,
     });
   } catch {
     throw new ApiError('Cannot reach the server. Check your connection and try again.', 0);
@@ -45,4 +46,5 @@ export const api = {
   login: (payload) => request('/auth/login', { method: 'POST', body: payload }),
   register: (payload) => request('/auth/register', { method: 'POST', body: payload }),
   me: () => request('/auth/me'),
+  createScan: (payload) => request('/scans', { method: 'POST', body: payload }),
 };

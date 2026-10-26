@@ -28,12 +28,23 @@ export function AuthProvider({ children }) {
     setUser(data.user);
   }, []);
 
+  const completeOAuth = useCallback(async (token) => {
+    tokenStore.set(token, true);
+    try {
+      const data = await api.me();
+      setUser(data.user);
+    } catch (err) {
+      tokenStore.clear();
+      throw err;
+    }
+  }, []);
+
   const logout = useCallback(() => {
     tokenStore.clear();
     setUser(null);
   }, []);
 
-  const value = useMemo(() => ({ user, loading, login, register, logout }), [user, loading, login, register, logout]);
+  const value = useMemo(() => ({ user, loading, login, register, completeOAuth, logout }), [user, loading, login, register, completeOAuth, logout]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

@@ -3,7 +3,7 @@ const User = require('../models/User');
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-const signToken = (user, remember) =>
+const signToken = (user, remember = false) =>
   jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, {
     expiresIn: remember
       ? process.env.JWT_EXPIRES_IN_REMEMBER || '30d'
@@ -34,6 +34,8 @@ exports.register = async (req, res, next) => {
     next(err);
   }
 };
+
+exports.signToken = signToken;
 
 exports.login = async (req, res, next) => {
   try {

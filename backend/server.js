@@ -5,6 +5,7 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const connectDB = require('./src/config/db');
 const authRoutes = require('./src/routes/authRoutes');
+const scanRoutes = require('./src/routes/scanRoutes');
 
 if (!process.env.JWT_SECRET) {
   console.error('JWT_SECRET is missing. Copy .env.example to .env and set it.');
@@ -28,6 +29,7 @@ const authLimiter = rateLimit({
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
 app.use('/api/auth', authLimiter, authRoutes);
+app.use('/api/scans', scanRoutes);
 
 app.use((_req, res) => res.status(404).json({ message: 'Route not found' }));
 app.use((err, _req, res, _next) => {
